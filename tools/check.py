@@ -29,6 +29,7 @@ README = ROOT / "README.md"
 SCREEN_IR = ROOT / "screen-ir"
 IR_SCHEMA = SCREEN_IR / "screen-ir.schema.json"
 WIDGET_DEFINITION_SCHEMA = SCREEN_IR / "widget-definition.schema.json"
+COLOR_SCHEME_SCHEMA = SCREEN_IR / "color-scheme.schema.json"
 WIDGETS = SCREEN_IR / "widgets"
 CASE_SCHEMA = ROOT / "conformance" / "case.schema.json"
 VALIDATE_CASES = ROOT / "conformance" / "screen-ir" / "validate"
@@ -111,9 +112,10 @@ def validate_screen(doc: Any, validator: Draft202012Validator) -> list[dict[str,
 
 
 def check_schemas(problems: list[str]) -> dict[Path, Any] | None:
-    """Load the repo's own schemas. None if any is unusable: the other checks depend on all three."""
+    """Load the repo's own schemas. None if any is unusable: the other checks depend on them."""
     schemas: dict[Path, Any] = {}
-    for path in (IR_SCHEMA, WIDGET_DEFINITION_SCHEMA, CASE_SCHEMA):
+    paths = (IR_SCHEMA, WIDGET_DEFINITION_SCHEMA, COLOR_SCHEME_SCHEMA, CASE_SCHEMA)
+    for path in paths:
         rel = path.relative_to(ROOT)
         try:
             schema = load(path)
@@ -129,7 +131,7 @@ def check_schemas(problems: list[str]) -> dict[Path, Any] | None:
             problems.append(f"{rel}: not a valid 2020-12 schema: {e}")
             continue
         schemas[path] = schema
-    return schemas if len(schemas) == 3 else None
+    return schemas if len(schemas) == len(paths) else None
 
 
 def check_rule_ids(case_schema: Any, problems: list[str]) -> None:
