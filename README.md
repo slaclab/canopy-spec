@@ -8,6 +8,7 @@ Language-neutral contracts for Canopy. These are the files every Canopy SDK and 
 screen-ir/
   screen-ir.schema.json            the Screen IR document format (*.screen.json), JSON Schema 2020-12
   widget-definition.schema.json    the format of the files in widgets/
+  color-scheme.schema.json         a facility color scheme: the roles a ColorRole names
   widgets/<type>.json              one file per IR widget type: its id and the props it accepts
 conformance/
   case.schema.json                 the format of a conformance case
@@ -23,12 +24,24 @@ The Screen IR (*intermediate representation*) is the `*.screen.json` format. The
 
 ### Document schema
 
-`screen-ir/screen-ir.schema.json` defines the document. The format version is `schemaVersion: "1.0"`.
+`screen-ir/screen-ir.schema.json` defines the document. The format version is `schemaVersion: "1.0"` or `"1.1"`. 1.1 is 1.0 plus color roles; a writer stamps the lowest version a document needs, so a document without a role stays 1.0 and older readers keep accepting it.
 
 The schema is read-tolerant by design:
 - `props` is an open bag, so unknown keys are allowed.
 - `metadata.source.type` accepts any string.
 - A widget `type` can be any string.
+
+### Color roles
+
+A **ColorRole**, `{ "$role": "alarm.major", "fallback": "#ff0000", "fallbackDark": "#ff6666" }`, is a themeable color. It is legal wherever a prop holds a color, at any depth (`foregroundColor`, `curves[].color`), and at a rule position (a condition's `value`, a conditional rule's `default`). `$role` is 1 to 64 characters; `fallback` and the optional `fallbackDark` are `#rrggbb` or `#rrggbbaa`. A viewer resolves the role through its color scheme and uses the fallback for the current mode when the scheme doesn't define the role. Any object that carries `$role` is a ColorRole and must be well formed; no other keys are allowed.
+
+`screen-ir/color-scheme.schema.json` (`canopy-color-scheme/1`) is the format of a facility color scheme layered on `canopy-default`: role colors per mode, aliases (`@other.role`), and import maps from Phoebus and EDM color names to roles.
+
+### Props every widget honours
+
+The schema types four props on every widget: `hoverLabel` and `hoverLabelPlacement` (text shown over a widget whose actions run on click), and `outlineColor` (a CSS color or a ColorRole) and `outlineWidth` (authored px, at least 0) for a resting outline.
+
+`props.actions` is reserved for a list of widget actions. Each action has a `type`: `open_display` (`file`, `target` one of `replace`/`tab`/`window`, optional string `macros`), `write_pv` (`pvName`, string or number `value`), `execute` (`command`, optional `description`), `open_webpage` (`url`), `open_file` (`file`) or `close_display`. The schema doesn't check the list; a reader ignores a list with any malformed entry. A runtime must refuse `execute` unless its deployment enables it, and must reject an `open_webpage` URL whose scheme isn't `http:` or `https:`.
 
 ### Semantic rules
 
@@ -84,7 +97,7 @@ Each invalid case breaks exactly one rule. Schema-error locations were chosen to
 
 | Implementation | Result | Notes |
 |---|---|---|
-| `tools/check.py` (reference) | Level 2, 22/22 | |
+| `tools/check.py` (reference) | Level 2, 29/29 | |
 | `@slaclab/canopy-screen-ir` `validate()` | Level 1, 22/22 | Schema error paths match. Semantic errors are returned as plain strings without a rule id or path |
 | `pydm-converter-tool` `validate_screen_json` | 16/22 | Schema only: it accepts the six semantically invalid cases, so the converter can emit screens that `validate()` rejects |
 
@@ -116,6 +129,7 @@ Don't edit copied files in an SDK. Change the spec here first. Keep a copy of [L
   - `required` lists reconciled against what the converter and the builder actually write;
   - consistent key naming. `pv-slider` uses `min`/`max` while `pv-spinbox` uses `minValue`/`maxValue`.
 - **The root type and `supportsChildren` aren't enforced.** `absolute-canvas` belongs at the root and nowhere else, and only types with `supportsChildren: true` should have `children`, but no semantic rule checks either yet. A document with a `pv-label` root, or a `pv-led` with children, passes validation.
+- **Implementation results below the reference row are against the 22 cases of v0.1.0.**
 - **Mixed drafts.** The prop schemas are draft-07 and the document schema is 2020-12.
 - **No conformance cases for macro expansion or rule evaluation yet.** Today only the runtime implements them.
 
