@@ -6,6 +6,8 @@
    its filename equals its id, and its propSchema is a valid draft-07 schema.
 3. Every conformance case is well formed and produces its expected outcome
    under the reference validator below.
+   screen-ir/color-scheme.schema.json is checked as a schema on its own; it
+   has no conformance cases yet.
 4. Every semantic rule id in conformance/case.schema.json is documented in the
    README's rules table.
 
@@ -35,6 +37,7 @@ CASE_SCHEMA = ROOT / "conformance" / "case.schema.json"
 VALIDATE_CASES = ROOT / "conformance" / "screen-ir" / "validate"
 
 FORMULA_PREFIX = "formula://"
+ROLE_KEY = "$role"
 
 
 def load(path: Path) -> Any:
@@ -105,16 +108,40 @@ def validate_screen(doc: Any, validator: Draft202012Validator) -> list[dict[str,
             walk(child, f"{path}/children/{c}")
 
     walk(doc["root"], "/root")
+
+    if doc["schemaVersion"] == "1.0" and carries_color_role(doc["root"]):
+        errors.append({"rule": "color-role-version", "instancePath": "/schemaVersion"})
     return errors
+
+
+def carries_color_role(node: dict[str, Any]) -> bool:
+    """Whether a widget, or any widget under it, holds a ColorRole in its props or at a rule position.
+
+    On a schema-valid document every object that carries `$role` there is a ColorRole.
+    """
+
+    def has_role(value: Any) -> bool:
+        if isinstance(value, dict):
+            return ROLE_KEY in value or any(has_role(v) for v in value.values())
+        if isinstance(value, list):
+            return any(has_role(v) for v in value)
+        return False
+
+    # The props bag's own keys are prop names, so look only at the values.
+    if any(has_role(value) for value in node["props"].values()):
+        return True
+    for rule in node.get("rules", []):
+        if has_role(rule["default"]) or any(has_role(c["value"]) for c in rule.get("conditions", [])):
+            return True
+    return any(carries_color_role(child) for child in node.get("children", []))
 
 
 # ── Checks ───────────────────────────────────────────────────────────────────
 
 
-def check_schemas(problems: list[str]) -> dict[Path, Any] | None:
-    """Load the repo's own schemas. None if any is unusable: the other checks depend on them."""
+def check_schemas(paths: tuple[Path, ...], problems: list[str]) -> dict[Path, Any] | None:
+    """Load and check the schemas at `paths`. None if any is unusable."""
     schemas: dict[Path, Any] = {}
-    paths = (IR_SCHEMA, WIDGET_DEFINITION_SCHEMA, COLOR_SCHEME_SCHEMA, CASE_SCHEMA)
     for path in paths:
         rel = path.relative_to(ROOT)
         try:
@@ -207,7 +234,9 @@ def check_cases(case_schema: Any, ir_schema: Any, problems: list[str]) -> int:
 def main() -> int:
     problems: list[str] = []
     widgets = cases = 0
-    schemas = check_schemas(problems)
+    # The color-scheme schema has no conformance cases yet, so nothing below depends on it.
+    check_schemas((COLOR_SCHEME_SCHEMA,), problems)
+    schemas = check_schemas((IR_SCHEMA, WIDGET_DEFINITION_SCHEMA, CASE_SCHEMA), problems)
     if schemas is not None:
         check_rule_ids(schemas[CASE_SCHEMA], problems)
         widgets = check_widgets(schemas[WIDGET_DEFINITION_SCHEMA], problems)
