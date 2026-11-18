@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Screen IR `schemaVersion` 1.1: 1.0 plus color roles. `schemaVersion` accepts `"1.0"` and `"1.1"`; the schema `$id` is `urn:canopy:screen-ir:1.1`. A writer stamps the lowest version a document needs.
+- `ColorRole` (`$role`, `fallback`, `fallbackDark`), allowed as any prop value, at any depth, and at rule positions (a condition's `value`, a conditional rule's `default`). `$role` is a reserved key in `props`.
+- The semantic rule `color-role-version`: a `"1.0"` document that carries a ColorRole fails it.
+- `hoverLabel`, `hoverLabelPlacement`, `outlineColor` and `outlineWidth` are typed on every widget. `hoverLabelPlacement` and `outlineWidth` also take a macro string. The reserved `props.actions` list is documented, with `open_display.macros` an object of strings and the same deployment gate for `open_file` as for `execute`.
+- `screen-ir/color-scheme.schema.json` (`urn:canopy:color-scheme:1`), the format of a facility color scheme, with an optional `format` and `$schema`. The README defines flattening.
+- `screen-ir/widget-definition.schema.json`'s `$id` is `urn:canopy:screen-ir:1.1:widget-definition`. `regular-button` 1.0.1 describes its actions with the reserved list's types.
+- 12 conformance cases for roles, the version rule, the common props and actions (34 in all). `tools/check.py` checks the color-scheme schema on its own.
+
 ## 0.1.0
 
 Initial import:
