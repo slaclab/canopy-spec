@@ -88,7 +88,7 @@ JSON Schema can't express these rules, so they're defined here. An implementatio
 | `formula-ref-unresolved` | A `formula://<name>` reference has no `formulas[]` entry named `<name>`. Checked in: top-level string prop values, a rule's `formula`, and a rule's `pvs[].name` | The prop, `.../rules/{j}/formula`, or `.../rules/{j}/pvs/{k}/name` |
 | `color-role-version` | `schemaVersion` is `"1.0"` and a ColorRole appears in a widget's `props`, at any depth, or at a rule position | `/schemaVersion`, once per document |
 
-A rule's `formula` may be written with or without the `formula://` prefix; either way it names a formula, it isn't an inline expression. Nested prop values, such as channels inside `waveform-plot` curves, aren't checked in v0.1, and implementations must not report them.
+A rule's `formula` may be written with or without the `formula://` prefix; either way it names a formula, it isn't an inline expression. Nested prop values, such as channels inside `waveform-plot` curves, aren't checked yet, and implementations must not report them.
 
 ### Widget definitions
 
@@ -103,11 +103,11 @@ Each file in `screen-ir/widgets/` defines one IR widget type:
 
 **The list of IR widget types is the set of files in this directory.** No separate list is kept, so there's nothing to fall out of sync. `absolute-canvas` is the document root, and `unknown-widget` is the converter's placeholder for source classes it has no definition for. Both are real types and have files here.
 
-**In v0.1 the prop schemas describe props but aren't enforced.** They're carried over from the Beaver registry, and some of their constraints would reject real screens:
+**The prop schemas describe props but aren't enforced yet.** They're carried over from the Beaver registry, and some of their constraints would reject real screens:
 - `"type": "number"` rejects macro values like `"$(PREC)"`;
 - several `required` lists don't match what the builder writes.
 
-Conformance doesn't test props against them yet; see [Known gaps](#known-gaps-v01).
+Conformance doesn't test props against them yet; see [Known gaps](#known-gaps).
 
 ## Conformance
 
@@ -156,7 +156,7 @@ Don't edit copied files in an SDK. Change the spec here first. Keep a copy of [L
 2. Note the change in `CHANGELOG.md` and tag a release.
 3. Bump the pin in each consumer.
 
-## Known gaps (v0.1)
+## Known gaps
 
 - **`pv-toggle` has no definition.** Both the screen builder and the runtime accept it.
 - **Don't validate props against the prop schemas yet, in CI or anywhere else.** In particular, don't enforce their `required` lists. Some don't match real screens: `text-label` requires `text`, but the builder also imports text labels that only have `label`. Enforcing them first needs:

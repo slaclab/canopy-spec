@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
 - Screen IR `schemaVersion` 1.1: 1.0 plus color roles. `schemaVersion` accepts `"1.0"` and `"1.1"`; the schema `$id` is `urn:canopy:screen-ir:1.1`. A writer stamps the lowest version a document needs.
 - `ColorRole` (`$role`, `fallback`, `fallbackDark`), allowed as any prop value, at any depth, and at rule positions (a condition's `value`, a conditional rule's `default`). `$role` is a reserved key in `props`.
